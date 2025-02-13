@@ -1,5 +1,20 @@
 (in-package :lem-user)
 
+;; Format on save
+(setf *auto-format* t)
+
+;; Use vi mode for shortcuts
+(lem-vi-mode:vi-mode)
+
+;; Visual stuff
+(lem/line-numbers:toggle-line-numbers)
+
+;; When switching to the REPL, start with insert mode
+(add-hook lem-lisp-mode:*lisp-repl-mode-hook* 
+          'lem-vi-mode/commands:vi-insert)
+(add-hook lem-lisp-mode:*lisp-repl-mode-hook* 
+          'lem-paredit-mode:paredit-mode)
+
 ;; Functions
 (define-command find-definitions-and-center () ()
   (lem/language-mode:find-definitions)
@@ -49,18 +64,6 @@
     (window-move-down)
     (switch-to-buffer old-buffer)))
 
-;; Use vi mode for shortcuts
-(lem-vi-mode:vi-mode)
-
-;; Visual stuff
-(lem/line-numbers:toggle-line-numbers)
-(lem-core/commands/window::toggle-line-wrap)
-
-;; When switching to the REPL, start with insert mode
-(add-hook lem-lisp-mode:*lisp-repl-mode-hook* 
-          'lem-vi-mode/commands:vi-insert)
-(add-hook lem-lisp-mode:*lisp-repl-mode-hook* 
-          'lem-paredit-mode:paredit-mode)
 ;; Paredit stuff
 (define-key lem-vi-mode:*normal-keymap* ">" 'lem-paredit-mode:paredit-slurp)
 (define-key lem-vi-mode:*normal-keymap* "<" 'lem-paredit-mode:paredit-barf)
@@ -121,7 +124,7 @@
   "lisp menu")
 (define-keys *space-m-keymap*
   ;; Repl
-  ("r" 'lem-lisp-mode:start-lisp-repl)
+  ("r" 'lem-lisp-mode/internal:slime)
 
   ;; Help
   ("h" 'lem-lisp-mode/hyperspec:hyperspec-at-point)
@@ -213,7 +216,8 @@
   ("w" *space-w-keymap*)
   ("q q" 'lem-core/commands/other:exit-lem)
   ("'" 'lem-terminal/terminal-mode::terminal)
-  ("Space" 'lem-core/commands/other:execute-command))
+  (";" 'lem-core/commands/other:execute-command)
+  ("Space" 'lem-core/commands/file:find-file))
 
 (define-key lem-vi-mode:*normal-keymap* "g d" 'find-definitions-and-center)
 (define-key lem-vi-mode:*normal-keymap* "g r" 'find-references-and-center)
