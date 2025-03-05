@@ -1,7 +1,13 @@
 (in-package :lem-user)
 
+;; Set the paredit mode to active
+(lem:add-hook lem:*find-file-hook*
+              (lambda (buffer)
+                (when (eq (buffer-major-mode buffer) 'lem-lisp-mode:lisp-mode)
+                  (change-buffer-mode buffer 'lem-paredit-mode:paredit-mode t))))
+
 ;; Format on save
-;; (setf *auto-format* t)
+(setf *auto-format* t)
 
 ;; Use vi mode for shortcuts
 (lem-vi-mode:vi-mode)
@@ -12,10 +18,6 @@
 ;; When switching to the REPL, start with insert mode
 (add-hook lem-lisp-mode:*lisp-repl-mode-hook* 
           'lem-vi-mode/commands:vi-insert)
-
-;; Start paredit on lisp files
-(add-hook lem-lisp-mode:*lisp-mode-hook*
-          'lem-paredit-mode:paredit-mode)
 
 ;; Functions
 (define-command find-definitions-and-center () ()
@@ -65,6 +67,19 @@
     (switch-to-buffer (down-buffer))
     (window-move-down)
     (switch-to-buffer old-buffer)))
+
+(define-command copy-down-and-go-down () ()
+  (lem-lisp-mode/internal::lisp-repl-copy-down)
+  (move-to-end-of-buffer)
+  (move-to-end-of-line)
+  (lem-vi-mode/commands:vi-insert))
+
+;; Paredit stuff
+(define-key lem-vi-mode:*normal-keymap* ">" 'lem-paredit-mode:paredit-slurp)
+(define-key lem-vi-mode:*normal-keymap* "<" 'lem-paredit-mode:paredit-barf)
+(define-key lem-vi-mode:*normal-keymap* "(" 'wrap-round-and-insert)
+(define-key lem-vi-mode:*insert-keymap* "(" 'lem-paredit-mode:paredit-insert-paren)
+(define-key lem-vi-mode:*insert-keymap* ")" 'lem-paredit-mode:paredit-close-parenthesis)
 
 ;; SPC b
 (defvar *space-b-keymap*
@@ -150,6 +165,21 @@
   ("t" 'lem/filer::filer)
   ("u" 'lem-core/commands/project:project-unsave))
 
+;; SPC r
+(defvar *space-r-keymap*
+  (make-keymap :name '*space-r-keymap*)
+  "repl menu")
+(define-keys *space-r-keymap*
+  ;; General
+  ("r" 'lem-lisp-mode/internal:slime)
+
+  ;; Movement
+  ("k" 'lem-lisp-mode/internal::backward-prompt)
+  ("j" 'lem-lisp-mode/internal::forward-prompt)
+
+  ;; Utils
+  ("l" 'copy-down-and-go-down))
+
 ;; SPC s
 (defvar *space-t-keymap*
   (make-keymap :name '*space-t-keymap*)
@@ -207,6 +237,7 @@
   ("j" *space-j-keymap*)
   ("m" *space-m-keymap*)
   ("p" *space-p-keymap*)
+  ("r" *space-r-keymap*)
   ("t" *space-t-keymap*)
   ("w" *space-w-keymap*)
   ("q q" 'lem-core/commands/other:exit-lem)
@@ -220,9 +251,3 @@
 
 (define-key lem-vi-mode:*normal-keymap* "Space" *space-keymap*) ; leader
 (define-key lem-vi-mode:*insert-keymap* "M-m" *space-keymap*)   ; alternative leader
-
-;; Paredit stuff
-(define-key lem-vi-mode:*normal-keymap* "@" 'lem-paredit-mode:paredit-splice)
-(define-key lem-vi-mode:*normal-keymap* "(" 'wrap-round-and-insert)
-(define-key lem-vi-mode:*normal-keymap* ">" 'lem-paredit-mode:paredit-slurp)
-(define-key lem-vi-mode:*normal-keymap* "<" 'lem-paredit-mode:paredit-barf)
